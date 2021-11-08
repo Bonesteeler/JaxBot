@@ -1,33 +1,63 @@
+#!/usr/bin/env python
+import json
+import random
+import sys
 import os
 
 import discord
-from dotenv import load_dotenv
-
-load_dotenv()
-TOKEN = os.getenv('TOKEN')
-GUILD = os.getenv('SERVER')
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
+serotoninPath = '\serotonin'
+
+serotoninPictures = []
+
+def getSerotonin():
+    print(sys.path[0])
+    for path, subdirs, files, in os.walk(sys.path[0] + serotoninPath):
+        for name in files:
+            serotoninPictures.append(name)
+    print(f'Got {len(serotoninPictures)} serotonin pictures')
+
+async def sendSerotonin(message, amt = 1):
+    picturePath = random.choice(serotoninPictures)
+    await message.channel.send(file=discord.File(sys.path[0] + serotoninPath + '\\' + picturePath))
+    
 @client.event
 async def on_ready():
-    guild = discord.utils.get(client.guilds, name=GUILD)
-    
-    print(
-        f'{client.user} is connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})\n'
-    )
-
-    members = '\n - '.join([member.name for member in guild.members])
-    print(f'Guild Members:\n - {members}')
+    getSerotonin()
+    print(f'bork')
 
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
+        
+    if "!SEROTONIN" in message.content:
+        await sendSerotonin(message, 9)
+        
+    messageLower = message.content.lower()
 
-    if "!speak" in message.content:
+    if "!speak" in messageLower:
         await message.channel.send("Bork")
+        
+    if "!serotonin" in messageLower:
+        await sendSerotonin(message)
+      
+        
+    if "!sleep" in messageLower:
+        await message.channel.send("zzz")
+        exit()
     
-client.run(TOKEN)
+def getSecrets():
+    secretsFile = open('secrets.json',)
+    secrets = json.load(secretsFile)
+    global token
+    token = secrets['token']
+    secretsFile.close()
+    
+if __name__ == "__main__":
+    global token
+    getSecrets()
+    client.run(token)

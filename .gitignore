@@ -1,2 +1,4 @@
 secrets.json
 serotonin/
+__pycache__/
+*.py[cod]

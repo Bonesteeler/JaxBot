@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from core.InputHandler import *
 import json
 import random
 import sys
@@ -17,6 +18,7 @@ def getSerotonin():
     global serotoninPath
     for path, subdirs, files, in os.walk(serotoninPath):
         for name in files:
+            print(name)
             serotoninPictures.append(name)
     print(f'Got {len(serotoninPictures)} serotonin pictures')
 
@@ -26,17 +28,18 @@ async def sendSerotonin(message, amt=1):
     await message.channel.send(file=discord.File(serotoninPath + '\\' + picturePath))
 
 
-async def addImage(message):
-    addedImages = 0
+async def addImage(message: discord.message):
+    addedImages: int = 0
     for attachment in message.attachments:
         ext = attachment.filename.split('.')[-1].lower()
         if ext in {"jpg", "png"}:
             savePath = serotoninPath + '\\' + \
                 str(len(serotoninPictures)) + '.' + ext
+            serotoninPictures.append(savePath)
             print(f'Saving image at {savePath}')
             await attachment.save(savePath)
             addedImages = addedImages + 1
-    await message.channel.send("Added " + str(addedImages) + " picture" if addedImages == 1 else " pictures")
+    await message.channel.send("Added " + str(addedImages) + (" picture" if addedImages == 1 else " pictures"))
 
 
 @client.event
@@ -49,43 +52,44 @@ async def on_ready():
 
 
 @client.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     if message.author == client.user:
         return
 
-    potentialCommand = message.content.split()[0]
-    if(potentialCommand[0] == "!"):
-        if(potentialCommand not in commandUsage):
-            commandUsage[potentialCommand] = 0
-        commandUsage[potentialCommand] = commandUsage[potentialCommand] + 1
-    else:
+    input = Input(message.content)
+    if not input.isValidCommand:
         return
 
-    async with message.channel.typing():
-        if "!SEROTONIN" == potentialCommand:
-            await sendSerotonin(message, 2)
+    if(input.command not in commandUsage):
+        commandUsage[input.command] = 0
+    commandUsage[input.command] = commandUsage[input.command] + 1
 
-        command = potentialCommand.lower()
+    await message.channel.trigger_typing()
+    if "!SEROTONIN" == input.command:
+        await sendSerotonin(message, 2)
 
-        if "!speak" == command:
-            await message.channel.send("Bork")
+    command = input.command.lower()
+    print(command)
 
-        if "!serotonin" == command:
-            await sendSerotonin(message)
+    if "!speak" == command:
+        await message.channel.send("Bork")
 
-        if "!brain" == command:
-            if len(message.attachments) > 0:
-                await addImage(message)
-            else:
-                await message.channel.send("No images given")
+    if "!serotonin" == command:
+        await sendSerotonin(message)
 
-        if "!help" == command:
-            await message.channel.send("!speak: Bork\n!serotonin: Child picture\n!brain: Adds attached images to serotonin\n!sleep: Stops Jax")
+    if "!brain" == command:
+        if len(message.attachments) > 0:
+            await addImage(message)
+        else:
+            await message.channel.send("No images given")
 
-        if "!sleep" == command:
-            await message.channel.send("zzz")
-            print(commandUsage)
-            exit()
+    if "!help" == command:
+        await message.channel.send("!speak: Bork\n!serotonin: Child picture\n!brain: Adds attached images to serotonin\n!sleep: Stops Jax")
+
+    if "!sleep" == command:
+        await message.channel.send("zzz")
+        print(commandUsage)
+        exit()
 
 
 def getSecrets():

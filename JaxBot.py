@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from core.InputHandler import *
+import FixImageNaming
 import json
 import random
 import sys
@@ -18,7 +19,6 @@ def getSerotonin():
     global serotoninPath
     for path, subdirs, files, in os.walk(serotoninPath):
         for name in files:
-            print(name)
             serotoninPictures.append(name)
     print(f'Got {len(serotoninPictures)} serotonin pictures')
 
@@ -39,6 +39,9 @@ async def addImage(message: discord.message):
             print(f'Saving image at {savePath}')
             await attachment.save(savePath)
             addedImages = addedImages + 1
+
+            if len(str(len)) > FixImageNaming.maxIndexStrLength:
+                FixImageNaming.fixNames()
     await message.channel.send("Added " + str(addedImages) + (" picture" if addedImages == 1 else " pictures"))
 
 
@@ -101,6 +104,7 @@ def getSecrets():
 
 
 if __name__ == "__main__":
+    FixImageNaming.fixNames()
     global token
     getSecrets()
     client.run(token)

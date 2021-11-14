@@ -5,10 +5,6 @@ import os
 maxIndexStrLength = 0
 
 
-def currentNameLength():
-    return maxIndexStrLength
-
-
 def fixNames():
     imgPath = sys.path[0] + '\serotonin'
     for path, subdirs, files, in os.walk(imgPath):

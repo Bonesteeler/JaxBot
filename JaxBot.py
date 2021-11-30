@@ -1,56 +1,25 @@
 #!/usr/bin/env python
+from collections import OrderedDict
 from core.InputHandler import *
-import FixImageNaming
 import json
-import random
-import sys
-import os
 
 import discord
+
+from tricks.serotonin import Serotonin
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
 commandUsage = dict()
-serotoninPictures = []
-
-
-def getSerotonin():
-    global serotoninPath
-    for path, subdirs, files, in os.walk(serotoninPath):
-        for name in files:
-            serotoninPictures.append(name)
-    print(f'Got {len(serotoninPictures)} serotonin pictures')
-
-
-async def sendSerotonin(message, amt=1):
-    picturePath = random.choice(serotoninPictures)
-    await message.channel.send(file=discord.File(serotoninPath + '\\' + picturePath))
-
-
-async def addImage(message: discord.message):
-    addedImages: int = 0
-    for attachment in message.attachments:
-        ext = attachment.filename.split('.')[-1].lower()
-        if ext in {"jpg", "png"}:
-            savePath = serotoninPath + '\\' + \
-                str(len(serotoninPictures)) + '.' + ext
-            serotoninPictures.append(savePath)
-            print(f'Saving image at {savePath}')
-            await attachment.save(savePath)
-            addedImages = addedImages + 1
-
-            if len(str(len)) > FixImageNaming.maxIndexStrLength:
-                FixImageNaming.fixNames()
-    await message.channel.send("Added " + str(addedImages) + (" picture" if addedImages == 1 else " pictures"))
+commands = dict()
+caseSensitiveCommands = dict()
+helpCommand = dict()
+helpString = ""
+tricks = []
 
 
 @client.event
 async def on_ready():
-    sysPath = sys.path[0]
-    global serotoninPath
-    serotoninPath = sysPath + '\serotonin'
-    getSerotonin()
     print(f'bork')
 
 
@@ -63,36 +32,34 @@ async def on_message(message: discord.Message):
     if not input.isValidCommand:
         return
 
-    if(input.command not in commandUsage):
-        commandUsage[input.command] = 0
-    commandUsage[input.command] = commandUsage[input.command] + 1
-
     await message.channel.trigger_typing()
-    if "!SEROTONIN" == input.command:
-        await sendSerotonin(message, 2)
+
+    if input.caseSensitiveCommand in caseSensitiveCommands:
+        recordCommand(input.caseSensitiveCommand)
+        await caseSensitiveCommands[input.caseSensitiveCommand](message)
+    elif input.command in commands:
+        recordCommand(input.command)
+        await commands[input.command](message)
 
     command = input.command.lower()
-    print(command)
 
     if "!speak" == command:
         await message.channel.send("Bork")
 
-    if "!serotonin" == command:
-        await sendSerotonin(message)
-
-    if "!brain" == command:
-        if len(message.attachments) > 0:
-            await addImage(message)
-        else:
-            await message.channel.send("No images given")
-
     if "!help" == command:
-        await message.channel.send("!speak: Bork\n!serotonin: Child picture\n!brain: Adds attached images to serotonin\n!sleep: Stops Jax")
+
+        await message.channel.send(helpString)
 
     if "!sleep" == command:
         await message.channel.send("zzz")
         print(commandUsage)
         exit()
+
+
+def recordCommand(command):
+    if(command not in commandUsage):
+        commandUsage[command] = 0
+    commandUsage[command] = commandUsage[command] + 1
 
 
 def getSecrets():
@@ -104,7 +71,15 @@ def getSecrets():
 
 
 if __name__ == "__main__":
-    FixImageNaming.fixNames()
     global token
     getSecrets()
+    tricks.append(Serotonin())
+    for trick in tricks:
+        commands.update(trick.tricks())
+        caseSensitiveCommands.update(trick.caseSensitiveTricks())
+        helpCommand.update(trick.help())
+        trick.onReady()
+    helpKeys = sorted(helpCommand.keys())
+    for key in helpKeys:
+        helpString = helpString + key + ":" + helpCommand[key] + "\n"
     client.run(token)

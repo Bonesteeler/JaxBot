@@ -4,11 +4,13 @@ from posixpath import split
 class Input:
     isValidCommand = False
     command = ""
+    caseSensitiveCommand = ""
     args = []
 
     def __init__(self, message: str):
-        if message[0] != '!':
+        if len(message) > 0 and message[0] != '!':
             return
         self.isValidCommand = True
         self.args = message.split()
-        self.command = self.args.pop()
+        self.caseSensitiveCommand = self.args.pop()
+        self.command = self.caseSensitiveCommand.lower()

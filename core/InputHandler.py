@@ -12,5 +12,8 @@ class Input:
             return
         self.isValidCommand = True
         self.args = message.split()
-        self.caseSensitiveCommand = self.args.pop()
+        try:
+            self.caseSensitiveCommand = self.args.pop()
+        except IndexError:
+            print("Caught " + message)
         self.command = self.caseSensitiveCommand.lower()

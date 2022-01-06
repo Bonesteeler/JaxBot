@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 from collections import OrderedDict
+from core.ErrorTrick import ErrorTrick
 from core.InputHandler import *
 import json
+import traceback
 
 import discord
 
@@ -25,7 +27,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message: discord.Message):
-    if message.author == client.user:
+    if message.author == client.user or len(message.content) < 1:
         return
 
     input = Input(message.content)
@@ -36,10 +38,19 @@ async def on_message(message: discord.Message):
 
     if input.caseSensitiveCommand in caseSensitiveCommands:
         recordCommand(input.caseSensitiveCommand)
-        await caseSensitiveCommands[input.caseSensitiveCommand](message)
+        try:
+            await caseSensitiveCommands[input.caseSensitiveCommand](message)
+        except Exception as e:
+            print("Exception came from " + input.command)
+            await message.channel.send("Theo fix it")
+
     elif input.command in commands:
         recordCommand(input.command)
-        await commands[input.command](message)
+        try:
+            await commands[input.command](message)
+        except Exception as e:
+            print("Exception came from " + input.command)
+            await message.channel.send("Theo fix it")
 
     command = input.command.lower()
 
@@ -73,6 +84,7 @@ def getSecrets():
 if __name__ == "__main__":
     global token
     getSecrets()
+    tricks.append(ErrorTrick())
     tricks.append(Serotonin())
     for trick in tricks:
         commands.update(trick.tricks())
